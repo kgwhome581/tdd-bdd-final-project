@@ -1,5 +1,5 @@
 ######################################################################
-# Copyright 2016, 2023 John J. Rofrano. All Rights Reserved.
+# Copyright 2016, 2024 John J. Rofrano. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,34 +19,36 @@ Product Steps
 
 Steps file for products.feature
 
-For information on Waiting until elements are present in the HTML see:
-    https://selenium-python.readthedocs.io/waits.html
+For information on Background steps see:
+https://behave.readthedocs.io/en/stable/tutorials/tutorial03.html#background-steps
 """
 import requests
 from behave import given
 
-# HTTP Return Codes
-HTTP_200_OK = 200
+# Константа для успешного создания
 HTTP_201_CREATED = 201
 HTTP_204_NO_CONTENT = 204
+
 
 @given('the following products')
 def step_impl(context):
     """ Delete all Products and load new ones """
-    #
-    # List all of the products and delete them one by one
-    #
+    # 1. Удаляем все существующие продукты перед началом сценария
     rest_endpoint = f"{context.base_url}/products"
     context.resp = requests.get(rest_endpoint)
-    assert(context.resp.status_code == HTTP_200_OK)
+    assert context.resp.status_code == 200
     for product in context.resp.json():
         context.resp = requests.delete(f"{rest_endpoint}/{product['id']}")
-        assert(context.resp.status_code == HTTP_204_NO_CONTENT)
+        assert context.resp.status_code == HTTP_204_NO_CONTENT
 
-    #
-    # load the database with new products
-    #
+    # 2. Загружаем новые продукты из таблицы context.table (ТВОЕ ЗАДАНИЕ)
     for row in context.table:
-        #
-        # ADD YOUR CODE HERE TO CREATE PRODUCTS VIA THE REST API
-        #
+        payload = {
+            "name": row['name'],
+            "description": row['description'],
+            "price": row['price'],
+            "available": row['available'] in ['True', 'true', '1'],
+            "category": row['category']
+        }
+        context.resp = requests.post(rest_endpoint, json=payload, timeout=5)
+        assert context.resp.status_code == HTTP_201_CREATED
